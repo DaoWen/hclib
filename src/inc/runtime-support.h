@@ -27,12 +27,17 @@
 void runtime_init(int * argc, char ** argv);
 
 /**
+ * @brief notify all workers to shut down
+ */
+void runtime_signal_shutdown();
+
+/**
  * @brief shutdown the underlying runtime
  */
 void runtime_finalize();
 
 
-void rtset_current_async(async_task_t * async);
+void rt_set_current_async(async_task_t * async);
 
 /**
  * @brief Returns the currently executing async
@@ -43,6 +48,11 @@ async_task_t * rt_get_current_async();
  * @brief Set the currently executing async
  */
 void set_current_async(async_task_t * async);
+
+
+#if HCLIB_LITECTX_STRATEGY
+void hclib_start_ctx(void);
+#endif /* HCLIB_LITECTX_STRATEGY */
 
 //
 // Task conversion

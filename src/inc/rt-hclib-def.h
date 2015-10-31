@@ -15,6 +15,7 @@
  */
 
 #include "hclib.h"
+#include "litectx.h"
 
 #define CHECKED_EXECUTION 0
 
@@ -35,6 +36,9 @@ typedef struct finish {
 #endif
     struct finish * parent;
     struct _accum_t ** accumulators; //TODO generify that ?
+#   if HCLIB_LITECTX_STRATEGY
+    struct ddf_st ** finish_deps;
+#   endif /* HCLIB_LITECTX_STRATEGY */
 } finish_t;
 
 struct _async_task_t;

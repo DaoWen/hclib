@@ -107,6 +107,66 @@ static __inline__ void work_shift(uint64_t wid, deque_t * deque) {
     }
 }
 
+#   if HCLIB_LITECTX_STRATEGY
+static void _hclib_finalize_ctx(LiteCtx *ctx) {
+    crt_set_tls_slot(TLS_SLOT_CURR_CTX, ctx);
+    end_finish();
+    // TODO:
+    // signal shutdown
+    // switch back to original thread
+    crt_signal_shutdown();
+    LiteCtx *originalCtx = crt_get_tls_slot(TLS_SLOT_ORIG_CTX);
+    LiteCtx_swap(ctx, originalCtx);
+    crt_set_tls_slot(TLS_SLOT_CURR_CTX, ctx);
+}
+
+void hclib_start_ctx(void) {
+    LiteCtx *currentCtx = LiteCtx_proxy_create();
+    crt_set_tls_slot(TLS_SLOT_ORIG_CTX, currentCtx);
+    LiteCtx *newCtx = LiteCtx_create(_hclib_finalize_ctx);
+    LiteCtx_swap(currentCtx, newCtx);
+    // free resources
+    LiteCtx_destroy(currentCtx->prev);
+    LiteCtx_proxy_destroy(currentCtx);
+}
+
+void crt_work_loop(void) {
+    uint64_t wid;
+    do {
+        wid = (uint64_t) crt_get_tls_slot(TLS_SLOT_WID);
+        deque_t * deque = deques[wid];
+        work_shift(wid, deque);
+    } while(allWorkFlag[wid].flag);
+    // switch back to original thread
+    {
+        LiteCtx *currentCtx = crt_get_tls_slot(TLS_SLOT_CURR_CTX);
+        LiteCtx *originalCtx = crt_get_tls_slot(TLS_SLOT_ORIG_CTX);
+        LiteCtx_swap(currentCtx, originalCtx);
+    }
+}
+
+static void _worker_ctx(LiteCtx *ctx) {
+    crt_set_tls_slot(TLS_SLOT_CURR_CTX, ctx);
+    worker_tls_t * wtls = ctx->arg;
+    pthread_setspecific(selfKey, wtls);
+    crt_work_loop();
+}
+
+static void* worker_routine(void * args) {
+    worker_tls_t * wtls = (worker_tls_t *) args;
+    pthread_setspecific(selfKey, wtls);
+    // set up context
+    LiteCtx *currentCtx = LiteCtx_proxy_create();
+    crt_set_tls_slot(TLS_SLOT_ORIG_CTX, currentCtx);
+    LiteCtx *newCtx = LiteCtx_create(_worker_ctx);
+    newCtx->arg = args;
+    LiteCtx_swap(currentCtx, newCtx);
+    // free resources
+    LiteCtx_destroy(currentCtx->prev);
+    LiteCtx_proxy_destroy(currentCtx);
+    return NULL;
+}
+#   else /* default (broken) strategy */
 static void* worker_routine(void * args) {
     worker_tls_t * wtls = (worker_tls_t *) args;
     pthread_setspecific(selfKey, wtls);
@@ -117,6 +177,7 @@ static void* worker_routine(void * args) {
     }
     return NULL;
 }
+#   endif /* HCLIB_LITECTX_STRATEGY */
 
 void crt_setup(int nb_workers_) {
     nb_workers = nb_workers_;
@@ -147,12 +208,16 @@ void crt_setup(int nb_workers_) {
     pthread_setspecific(selfKey, &allTls[0]);
 }
 
-void crt_shutdown() {
-    //workers shutdown
+void crt_signal_shutdown() {
     int i;
     for(i=0;i<nb_workers;i++) {
         allWorkFlag[i].flag = 0;
     }
+}
+
+void crt_shutdown() {
+    //workers shutdown
+    int i;
     for(i=1;i< nb_workers; i++) {
         pthread_join(threads[i], NULL);
     }

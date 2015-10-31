@@ -32,6 +32,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef HCLIB_H_
 #define HCLIB_H_
 
+#define HCLIB_LITECTX_STRATEGY 1
+
 /**
  * @file Interface to HCLIB
  */
@@ -46,20 +48,26 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "accumulator.h"
 #include "ddf.h"
 
+// forward declaration for phased clause defined in phased.h
 //TODO make this conditional in phased.h
 struct _phased_t;
 
 /**
- * @brief Initialize the HClib runtime.
- * Implicitly defines a global finish scope.
+ * @brief Function prototype executable by an async.
+ * @param[in] arg           Arguments to the function
  */
-void hclib_init(int * argc, char ** argv);
+typedef void (*asyncFct_t) (void * arg);
 
 /**
- * @brief Finalize execution of the HClib runtime.
- * Ends the global finish scope and waits for all asyncs to terminate.
+ * @brief Initialize and launch HClib runtime.
+ * Implicitly defines a global finish scope.
+ * Returns once the computation has completed and the runtime has been finalized.
+ * @param[in,out] argc          Pointer to command-line argument count, as given by main()
+ * @param[in,out] argv          Command-line arguments array, as given my main()
+ * @param[in]     fct_ptr       The function to execute
+ * @param[in]     arg           Argument to the function to execute
  */
-void hclib_finalize();
+void hclib_launch(int * argc, char ** argv, asyncFct_t fct_ptr, void * arg);
 
 
 //
@@ -85,15 +93,6 @@ void hclib_finalize();
 //
 // Async definition and API
 //
-
-/**
- * @brief Function prototype executable by an async.
- * @param[in] arg           Arguments to the function
- */
-typedef void (*asyncFct_t) (void * arg);
-
-// forward declaration for phased clause defined in phased.h
-struct _phased_t;
 
 /**
  * @brief Spawn a new task asynchronously.

@@ -10,9 +10,12 @@
 // CRT implementation of TLS
 //
 
-#define WORKER_TLS_SIZE 2
-#define TLS_SLOT_WID 0
-#define TLS_SLOT_TASK 1
+// TODO - just use __thread instead? should only enable CTX slots for LITECTX strategy
+#define TLS_SLOT_WID        0
+#define TLS_SLOT_TASK       1
+#define TLS_SLOT_ORIG_CTX   2
+#define TLS_SLOT_CURR_CTX   3
+#define WORKER_TLS_SIZE     4
 
 void * crt_get_tls_slot(int slot_id);
 
@@ -31,6 +34,8 @@ int crt_get_nb_workers();
 //
 
 void crt_setup(int nb_workers);
+
+void crt_signal_shutdown();
 
 void crt_shutdown();
 

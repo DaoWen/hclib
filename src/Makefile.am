@@ -1,7 +1,7 @@
 SUBDIRS =
 
 # Includes folders
-INCLUDES_DIR = -I$(top_srcdir)/inc -I$(top_srcdir)/src/inc
+INCLUDES_DIR = -I$(top_srcdir)/inc -I$(top_srcdir)/src/inc -I$(top_srcdir)/src/fcontext
 
 # cflags: important to define that otherwise we inherit default values too
 # NOTE: Disabled -Werror because OCR uses #warning to warn about extension API

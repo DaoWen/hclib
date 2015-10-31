@@ -26,7 +26,11 @@
 static int runtime_on = 0;
 static async_task_t * root_async_task = NULL;
 
-void hclib_init(int * argc, char ** argv) {
+/**
+ * @brief Initialize the HClib runtime.
+ * Implicitly defines a global finish scope.
+ */
+static void hclib_init(int * argc, char ** argv) {
     if (runtime_on) {
         assert(0 && "hc_init called twice");
     }
@@ -45,20 +49,41 @@ void hclib_init(int * argc, char ** argv) {
     // Go back to user code
 }
 
-void hclib_finalize() {
+/**
+ * @brief Finalize execution of the HClib runtime.
+ * Ends the global finish scope and waits for all asyncs to terminate.
+ */
+static void hclib_finalize(void) {
     // Checkout of the implicit finish scope
     if (runtime_on) {
         // Current worker is executing the async root task
         // Check out of the implicit finish scope
+#   if HCLIB_LITECTX_STRATEGY
+        hclib_start_ctx();
+#   else /* default (broken) strategy */
         end_finish();
+        runtime_signal_shutdown();
+#   endif /* HCLIB_LITECTX_STRATEGY */
         // Deallocate the root activity
         free(root_async_task);
-        // Shutdown the underlying runtime
+        // Shut down the underlying runtime
         runtime_finalize();
         runtime_on = 0;
     } else {
         assert(0 && "hc_finalize called without any matching hc_init");
     }
+}
+
+
+/**
+ * @brief Initialize and launch HClib runtime.
+ * Implicitly defines a global finish scope.
+ * Returns once the computation has completed and the runtime has been finalized.
+ */
+void hclib_launch(int * argc, char ** argv, asyncFct_t fct_ptr, void * arg) {
+    hclib_init(argc, argv);
+    async(fct_ptr, arg, NO_DDF, NO_PHASER, NO_PROP);
+    hclib_finalize();
 }
 
 /**

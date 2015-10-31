@@ -2,7 +2,7 @@ TARGET := fib
 
 $(TARGET): $(TARGET).c
 	@ [ -d "${HCLIB_ROOT}" ] || (echo Need to set HCLIB_ROOT; exit 1)
-	gcc -o$@ -std=gnu99 -I${HCLIB_ROOT}/include -L${HCLIB_ROOT}/lib -lhclib $^
+	gcc -O0 -g -o$@ -std=gnu99 -I${HCLIB_ROOT}/include -L${HCLIB_ROOT}/lib -lhclib $^
 
 WORKLOAD_ARGS ?= 5
 

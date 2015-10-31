@@ -45,12 +45,19 @@ void ddt_init(ddt_t * ddt, ddf_t ** ddf_list) {
 }
 
 /**
+ * Initialize a DDF
+ */
+void __inline__ ddf_init(ddf_t *ddf) {
+    ddf->datum = UNINITIALIZED_DDF_DATA_PTR;
+    ddf->headDDTWaitList = UNINITIALIZED_DDF_WAITLIST_PTR;
+}
+
+/**
  * Allocate a DDF and initializes it.
  */
 ddf_t * ddf_create() {
     ddf_t * ddf = (ddf_t *) malloc(sizeof(ddf_t));
-    ddf->datum = UNINITIALIZED_DDF_DATA_PTR;
-    ddf->headDDTWaitList = UNINITIALIZED_DDF_WAITLIST_PTR;
+    ddf_init(ddf);
     return ddf;
 }
 

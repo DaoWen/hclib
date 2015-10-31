@@ -57,6 +57,12 @@ struct ddf_st;
 struct ddf_st * ddf_create();
 
 /**
+ * @brief Initialize a DDF (probably stack-allocated)
+ * @param[in] ddf          Pointer to DDF to initialize
+ */
+void ddf_init(struct ddf_st * ddf);
+
+/**
  * @brief Allocate and initialize an array of DDFs.
  * @param[in] nb_ddfs 				Size of the DDF array
  * @param[in] null_terminated 		If true, create nb_ddfs-1 and set the last element to NULL.

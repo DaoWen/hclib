@@ -84,6 +84,10 @@ void runtime_init(int * argc, char ** argv) {
     #endif
 }
 
+void runtime_signal_shutdown() {
+    crt_signal_shutdown();
+}
+
 void runtime_finalize() {
     crt_shutdown();
 }
@@ -180,13 +184,36 @@ void rt_schedule_async(async_task_t * async_task) {
 void rt_finish_reached_zero(finish_t * finish) {
     crt_finish_t * crt_finish = (crt_finish_t *) finish;
     crt_finish->done = 1;
+#   if HCLIB_LITECTX_STRATEGY
+    ddf_put(finish->finish_deps[0], finish);
+#   endif /* HCLIB_LITECTX_STRATEGY */
 }
 
-void rt_help_finish(finish_t * finish) {
-    // This is called to make progress when an end_finish has been
-    // reached but it hasn't completed yet.
-    // Note that's also where the master worker ends up entering its work loop
+#if HCLIB_LITECTX_STRATEGY
+static void _finish_ctx_resume(void *arg) {
+    LiteCtx *currentCtx = crt_get_tls_slot(TLS_SLOT_CURR_CTX);
+    LiteCtx *finishCtx = arg;
+    LiteCtx_swap(currentCtx, finishCtx);
+    assert(!"UNREACHABLE");
+}
 
+void crt_work_loop(void);
+
+static void _help_finish_ctx(LiteCtx *ctx) {
+    crt_set_tls_slot(TLS_SLOT_CURR_CTX, ctx);
+    finish_t *finish = ctx->arg;
+    // Remember the current context
+    crt_set_tls_slot(TLS_SLOT_CURR_CTX, ctx);
+    // Set up previous context to be stolen when the finish completes
+    LiteCtx *finishCtx = ctx->prev;
+    async(_finish_ctx_resume, finishCtx, finish->finish_deps, NO_PHASER, NO_PROP);
+    // keep workstealing until this context gets swapped out and destroyed
+    rtcb_check_out_finish(finish);
+    rtcb_check_out_finish(finish);
+    crt_work_loop();
+}
+#else /* default (broken) strategy */
+static void _help_finish(finish_t * finish) {
     // Here we're racing with other asyncs checking out of the same finish scope
     rtcb_check_out_finish(finish);
     crt_finish_t * crt_finish = (crt_finish_t *) finish;
@@ -195,6 +222,35 @@ void rt_help_finish(finish_t * finish) {
     while(!crt_finish->done) {
         crt_work_shift(wid);
     }
+}
+#endif /* HCLIB_LITECTX_STRATEGY */
+
+void rt_help_finish(finish_t * finish) {
+    // This is called to make progress when an end_finish has been
+    // reached but it hasn't completed yet.
+    // Note that's also where the master worker ends up entering its work loop
+
+#   if HCLIB_THREAD_BLOCKING_STRATEGY
+#   error Thread-blocking strategy is not yet implemented
+#   elif HCLIB_LITECTX_STRATEGY
+    {
+        // create finish event
+        struct ddf_st *finish_deps[] = { ddf_create(), NULL };
+        finish->finish_deps = finish_deps;
+        // TODO - should only switch contexts after actually finding work
+        LiteCtx *currentCtx = crt_get_tls_slot(TLS_SLOT_CURR_CTX);
+        LiteCtx *newCtx = LiteCtx_create(_help_finish_ctx);
+        newCtx->arg = finish;
+        LiteCtx_swap(currentCtx, newCtx);
+        crt_set_tls_slot(TLS_SLOT_CURR_CTX, currentCtx);
+        // free resources
+        LiteCtx_destroy(currentCtx->prev);
+        ddf_free(finish_deps[0]);
+    }
+#   else /* default (broken) strategy */
+    _help_finish(finish);
+#   endif /* HCLIB_???_STRATEGY */
+
     assert(finish->counter == 0);
 }
 

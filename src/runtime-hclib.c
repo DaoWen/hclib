@@ -100,6 +100,7 @@ async_task_t * allocate_async_task(async_t * async_def) {
         async_task = rt_allocate_ddt(async_def->ddf_list);
     } else {
         // Initializes and zeroes
+        // XXX - I don't think this actually zeros the memory
         async_task = rt_allocate_async_task();
     }
     // Copy the definition

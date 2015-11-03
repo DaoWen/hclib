@@ -1,6 +1,8 @@
-This example demonstrates how the (busy-waiting) implementation of 
-ocrLegacyBlockProgress can easily lead to deadlock. This example (recursive 
-Fibonacci) will usually deadlock when run with the default configuration (8 
-workers) for Fib(5). To build and run the example for Fib(5), simply "make 
-run". You can change the Fibonacci number by setting the WORKLOAD_ARGS 
-environment variable.
+This example demonstrates how the default configuration for ocrInformLegacyCodeB
+locking can easily lead to deadlock. This example (recursive Fibonacci) will usu
+ally deadlock when run with the default configuration (8 workers) for Fib(5). To
+ build and run the example for Fib(5), simply "make run". You can change the Fib
+onacci number by setting the WORKLOAD_ARGS environment variable.
+
+To fix this issue, the following option needs to be enabled when building OCR:
+ENABLE_SCHEDULER_BLOCKING_SUPPORT

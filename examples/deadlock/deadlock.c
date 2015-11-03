@@ -36,6 +36,7 @@ void taskA(void *args) {
         async(taskSleep, taskA, NO_DDF, NO_PHASER, NO_PROP);
         DELAY(2);
     }
+    printf("%p <- %p\n", ddf, &data);
     ddf_put(ddf, &data);
 }
 
@@ -53,17 +54,18 @@ void taskC(void *args) {
     DELAY(5);
 }
 
-int main(int argc, char ** argv) {
-    hclib_init(&argc, argv);
-    ddf = ddf_create();
+void taskMain(void *args) {
     ddf_list = ddf_create_n(1, true);
+    ddf = ddf_create();
     ddf_list[0] = ddf;
 
     async(&taskA, NULL, NO_DDF, NO_PHASER, NO_PROP);
     async(&taskC, NULL, NO_DDF, NO_PHASER, NO_PROP);
     DELAY(10);
+}
 
-    hclib_finalize();
+int main(int argc, char ** argv) {
+    hclib_launch(&argc, argv, taskMain, NULL);
     printf("Done\n");
 }
 

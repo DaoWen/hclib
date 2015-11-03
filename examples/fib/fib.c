@@ -28,13 +28,16 @@ void fib(void * raw_args) {
     }
 }
 
-int main(int argc, char ** argv) {
-    hclib_init(&argc, argv);
-    const int n = atoi(argv[1]);
+void taskMain(void *raw_args) {
+    char **argv = raw_args;
+    int n = atoi(argv[1]);
     FibArgs args = { n, 0 };
     FINISH {
         async(fib, &args, NO_DDF, NO_PHASER, NO_PROP);
     }
     printf("Fib(%d) = %ld\n", n, args.res);
-    hclib_finalize();
+}
+
+int main(int argc, char ** argv) {
+    hclib_launch(&argc, argv, taskMain, argv);
 }

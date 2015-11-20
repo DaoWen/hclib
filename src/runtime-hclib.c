@@ -48,14 +48,18 @@ void check_out_finish(finish_t * finish) {
  * @brief Async task checking in a finish
  */
 void async_check_in_finish(async_task_t * async_task) {
-    check_in_finish(async_task->current_finish);
+    if (async_task->current_finish) {
+        check_in_finish(async_task->current_finish);
+    }
 }
 
 /**
  * @brief Async task checking out of a finish
  */
 void async_check_out_finish(async_task_t * async_task) {
-    check_out_finish(async_task->current_finish);
+    if (async_task->current_finish) {
+        check_out_finish(async_task->current_finish);
+    }
 }
 
 /**

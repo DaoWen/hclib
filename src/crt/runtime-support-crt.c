@@ -206,9 +206,8 @@ static void _help_finish_ctx(LiteCtx *ctx) {
     crt_set_tls_slot(TLS_SLOT_CURR_CTX, ctx);
     // Set up previous context to be stolen when the finish completes
     LiteCtx *finishCtx = ctx->prev;
-    async(_finish_ctx_resume, finishCtx, finish->finish_deps, NO_PHASER, NO_PROP);
+    async_escape(_finish_ctx_resume, finishCtx, finish->finish_deps, NO_PHASER, NO_PROP);
     // keep workstealing until this context gets swapped out and destroyed
-    rtcb_check_out_finish(finish);
     rtcb_check_out_finish(finish);
     crt_work_loop();
 }

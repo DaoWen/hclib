@@ -105,6 +105,16 @@ void hclib_launch(int * argc, char ** argv, asyncFct_t fct_ptr, void * arg);
 void async(asyncFct_t fct_ptr, void * arg,
            struct ddf_st ** ddf_list, struct _phased_t * phased_clause, int property);
 
+/**
+ * @brief Spawn a new task asynchronously, escaping from all finish scopes.
+ * @param[in] fct_ptr           The function to execute
+ * @param[in] arg               Argument to the async
+ * @param[in] ddf_list          The list of DDFs the async depends on
+ * @param[in] phased_clause     Phased clause to specify which phasers the async registers on
+ * @param[in] property          Flag to pass information to the runtime
+ */
+void async_escape(asyncFct_t fct_ptr, void * arg,
+           struct ddf_st ** ddf_list, struct _phased_t * phased_clause, int property);
 
 //
 // Forasync definition and API

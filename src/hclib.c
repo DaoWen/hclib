@@ -135,8 +135,8 @@ void end_finish() {
     deallocate_finish(current_finish);
 }
 
-static inline void _async_base(asyncFct_t fct_ptr, void * arg,
-           struct ddf_st ** ddf_list, struct _phased_t * phased_clause, int property, int is_escaping) {
+void async(asyncFct_t fct_ptr, void * arg,
+           struct ddf_st ** ddf_list, struct _phased_t * phased_clause, int property) {
 #if CHECKED_EXECUTION
     assert(runtime_on);
 #endif
@@ -151,16 +151,6 @@ static inline void _async_base(asyncFct_t fct_ptr, void * arg,
 
     // Build the new async task and associate with the definition
     async_task_t * async_task = allocate_async_task(&async_def);
-    finish_t * fin = is_escaping ? NULL : get_current_finish();
+    finish_t * fin = (property & ESCAPING_ASYNC) ? NULL : get_current_finish();
     schedule_async(async_task, fin, property);
-}
-
-void async(asyncFct_t fct_ptr, void * arg,
-           struct ddf_st ** ddf_list, struct _phased_t * phased_clause, int property) {
-    _async_base(fct_ptr, arg, ddf_list, phased_clause, property, 0);
-}
-
-void async_escape(asyncFct_t fct_ptr, void * arg,
-           struct ddf_st ** ddf_list, struct _phased_t * phased_clause, int property) {
-    _async_base(fct_ptr, arg, ddf_list, phased_clause, property, 1);
 }

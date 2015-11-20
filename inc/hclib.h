@@ -85,7 +85,9 @@ void hclib_launch(int * argc, char ** argv, asyncFct_t fct_ptr, void * arg);
 /** @brief No phaser argument provided. */
 #define NO_PHASER NULL
 /** @brief To indicate an async must register with all phasers. */
-#define PHASER_TRANSMIT_ALL ((int) 0x1) 
+#define PHASER_TRANSMIT_ALL ((int) 0x1)
+/** @brief To indicate an async need not register with any finish scopes. */
+#define ESCAPING_ASYNC      ((int) 0x2)
 /** @brief No accumulator argument provided. */
 #define NO_ACCUM NULL
 
@@ -103,17 +105,6 @@ void hclib_launch(int * argc, char ** argv, asyncFct_t fct_ptr, void * arg);
  * @param[in] property          Flag to pass information to the runtime
  */
 void async(asyncFct_t fct_ptr, void * arg,
-           struct ddf_st ** ddf_list, struct _phased_t * phased_clause, int property);
-
-/**
- * @brief Spawn a new task asynchronously, escaping from all finish scopes.
- * @param[in] fct_ptr           The function to execute
- * @param[in] arg               Argument to the async
- * @param[in] ddf_list          The list of DDFs the async depends on
- * @param[in] phased_clause     Phased clause to specify which phasers the async registers on
- * @param[in] property          Flag to pass information to the runtime
- */
-void async_escape(asyncFct_t fct_ptr, void * arg,
            struct ddf_st ** ddf_list, struct _phased_t * phased_clause, int property);
 
 //

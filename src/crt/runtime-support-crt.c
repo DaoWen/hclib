@@ -200,12 +200,11 @@ static void _finish_ctx_resume(void *arg) {
 void crt_work_loop(void);
 
 static void _help_finish_ctx(LiteCtx *ctx) {
-    crt_set_tls_slot(TLS_SLOT_CURR_CTX, ctx);
-    finish_t *finish = ctx->arg;
     // Remember the current context
     crt_set_tls_slot(TLS_SLOT_CURR_CTX, ctx);
     // Set up previous context to be stolen when the finish completes
     // (note that the async must ESCAPE, otherwise this finish scope will deadlock on itself)
+    finish_t *finish = ctx->arg;
     LiteCtx *finishCtx = ctx->prev;
     async(_finish_ctx_resume, finishCtx, finish->finish_deps, NO_PHASER, ESCAPING_ASYNC);
     // keep workstealing until this context gets swapped out and destroyed

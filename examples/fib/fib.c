@@ -70,12 +70,20 @@ static FibDDtArgs *setup_fib_ddt_args(int n) {
     return args;
 }
 
+static void free_ddt_args(FibDDtArgs *args) {
+    ddf_free(args->res);
+    free(args);
+}
+
 void fib_ddt_res(void * raw_args) {
     FibDDtArgs *args = raw_args;
     FibDDtArgs *lhs = ddf_get(args->subres[0]);
     FibDDtArgs *rhs = ddf_get(args->subres[1]);
     args->resval =  lhs->resval + rhs->resval;
     ddf_put(args->res, args);
+    // cleanup
+    free_ddt_args(lhs);
+    free_ddt_args(rhs);
 }
 
 void fib_ddt(void * raw_args) {
@@ -106,11 +114,12 @@ void fib_ddt_root_await(void * raw_args) { /* no-op */ }
 int main(int argc, char ** argv) {
     hclib_init(&argc, argv);
     const int n = atoi(argv[1]);
+    const int doDDT = argv[2] && atoi(argv[2]);
     const long fn = fib_iter(n);
     const long fnp1 = fib_iter(n+1);
-    long resA, resB;
+    long answer;
     // ASYNC-FINISH version
-    {
+    if (!doDDT) {
         start();
         FibArgs args = { n, 0 };
         FINISH {
@@ -118,11 +127,11 @@ int main(int argc, char ** argv) {
         }
         double time_sec = stop();
         print_throughput(fnp1, time_sec);
-        resA = args.res;
+        answer = args.res;
         //printf("asyncs = %ld\tfins=%ld\n", 2*fnp1-1, fnp1);
     }
     // DDT version
-    {
+    else {
         start();
         FibDDtArgs *args = setup_fib_ddt_args(n);
         FINISH {
@@ -132,10 +141,10 @@ int main(int argc, char ** argv) {
         }
         double time_sec = stop();
         print_throughput(fnp1, time_sec);
-        resB = args->resval;
+        answer = args->resval;
     }
     // check results
-    printf("Fib(%d) = %ld = %ld = %ld\n", n, fn, resA, resB);
-    assert(resA == fn && resB == fn);
+    printf("Fib(%d) = %ld = %ld\n", n, fn, answer);
+    assert(answer == fn);
     hclib_finalize();
 }

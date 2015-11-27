@@ -33,19 +33,28 @@ typedef struct {
     long res;
 } FibArgs;
 
+static FibArgs *setup_fib_args(int n) {
+    FibArgs *args = malloc(sizeof(*args));
+    args->n = n;
+    return args;
+}
+
 void fib(void * raw_args) {
     FibArgs *args = raw_args;
     if (args->n < 2) {
         args->res = args->n;
     }
     else {
-        FibArgs lhsArgs = { args->n - 1, 0 };
-        FibArgs rhsArgs = { args->n - 2, 0 };
+        FibArgs *lhsArgs = setup_fib_args(args->n - 1);
+        FibArgs *rhsArgs = setup_fib_args(args->n - 2);
         FINISH {
-            async(fib, &lhsArgs, NO_DDF, NO_PHASER, NO_PROP);
-            async(fib, &rhsArgs, NO_DDF, NO_PHASER, NO_PROP);
+            async(fib, lhsArgs, NO_DDF, NO_PHASER, NO_PROP);
+            async(fib, rhsArgs, NO_DDF, NO_PHASER, NO_PROP);
         }
-        args->res = lhsArgs.res + rhsArgs.res;
+        args->res = lhsArgs->res + rhsArgs->res;
+        // cleanup
+        free(lhsArgs);
+        free(rhsArgs);
     }
 }
 
